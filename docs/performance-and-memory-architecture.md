@@ -12,7 +12,28 @@ This specification outlines the systematic measures chosen to guarantee atomic r
 
 ## 2. State Management Architecture: Normalized State vs. Flat Arrays
 
-If we stored the orders inside a Flat Array natively managed by a typical React `Context`, any update to a singular order object would result in creating a completely new array reference. Because all components reading from Context consume the newly recreated array, they are forced to rerender, leading to `O(N)` cascading checks against thousands of items.
+### The React Context Re-render Waterfall (The "Flat Array" Problem)
+
+If we stored the orders inside a Flat Array natively managed by a typical React `Context`, any update to a singular order object requires modifying the generic array structure immutablely. 
+
+**Is it because we have to update the whole array?**
+Yes. In React, state must be treated implicitly as immutable data. You cannot simply modify an object in place (`orders[5].status = 'Delivered'`). You must create a completely **new array reference** using mapping:
+
+```javascript
+// The immutable array update forcing a new reference
+setOrders(prev => prev.map(order => 
+  order.id === targetId ? { ...order, status: 'Delivered' } : order
+))
+```
+
+Because the entire array reference effectively changes in hardware memory, the `<OrderContext.Provider value={orders}>` sees a brand new object. 
+
+**The Execution Sequence leading to a Rerender Cascade:**
+1. **Event Trigger:** A single driver updates their status from *Pending* to *Delivered*.
+2. **Immutability Requirement:** The global Context state creates a completely new array (`[...newOrders]`) to reflect this single change.
+3. **Context Notification:** The React `Context.Provider` detects its `value` prop has a new identity.
+4. **Mass Invalidation:** Every single `<OrderItem />` component subscribing to `useContext()` to read its data is forcefully invalidated, because from React's perspective, the "data pool" they rely on has shifted.
+5. **The Bottleneck:** React is forced to execute the reconciliation algorithm (the Render phase) for **all 1,000+ items** simultaneously, deeply checking if the DOM needs updating for items that never actually changed.
 
 To explicitly bypass React's standard context propagation cascades, we employ **Zustand** utilizing a **Normalized State Dictionary**.
 
