@@ -1,73 +1,48 @@
-# React + TypeScript + Vite
+# Real-Time Logistics Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A high-performance logistics monitoring dashboard built with **React 18**, **TypeScript**, **Tailwind CSS**, and **Zustand**. 
 
-Currently, two official plugins are available:
+The dashboard is specifically architected to demonstrate advanced Frontend System Design patterns. It explicitly handles updating 1,000+ localized data points alongside a high-frequency (2-second interval) global polling environment without triggering React's concurrent render cascading, dropping frames, or blocking the V8 main thread.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Zustand](https://img.shields.io/badge/zustand-%2320232a.svg?style=for-the-badge&logo=react)
 
-## React Compiler
+## Core Features
+1. **Normalized Grid State Store**: A Zustand state implementation completely bypassing flat-arrays in favor of a `Record<string, Order>` dictionary setup to achieve atomic component reactivity (O(1) lookups).
+2. **Infinite DOM Windowing**: Utilization of `react-window` to cut standard DOM node allocations by 98% (reducing 1000 items down to ~15 active nodes in bounds).
+3. **Memoized Reference Stability**: Heavily isolated React Fiber tree preservations via `React.memo` and strictly curried `useCallback` tracking to abort global diff checks.
+4. **Decoupled Simulation Scoping**: High-frequency intervals (the 2s driver simulation) are purely partitioned by localized `useInterval` hooks to secure garbage-collection against V8 macro-tasks and safely circumvent memory leaks.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Deep Dive Architecture
+For a comprehensive analysis of the architectural patterns utilized within the dashboard, please view the internal documentation:
+- [📖 Performance & Memory Architecture Specification](./docs/performance-and-memory-architecture.md)
 
-## Expanding the ESLint configuration
+## Development
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
+- Node.js >= 18
+- NPM / Yarn
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Installation
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. Copy the repository components:
+```bash
+git clone https://github.com/jumppack/logistics-dashboard.git
+```
+2. Navigate to the project directory:
+```bash
+cd logistics-dashboard
+```
+3. Install dependencies:
+```bash
+npm install
+```
+4. Start the Vite dev server:
+```bash
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Contributing
+Standard Vite configuration bounds apply. Pull requests are welcomed for expanding polling constraints or enhancing state tracking logic.
