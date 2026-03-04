@@ -57,13 +57,13 @@ export default function LiveOrders() {
             Even with 1000+ items, the browser only manages ~10-15 nodes, keeping FPS high. */}
         <WindowList
           height={600}      
-          itemCount={orderIds.length}
-          itemSize={96}     
+          rowCount={orderIds.length}
+          rowHeight={96}     
           width="100%"
           overscanCount={5} 
-        >
-          {Row}
-        </WindowList>
+          rowComponent={Row}
+          rowProps={{}}
+        />
       </div>
     </div>
   );
