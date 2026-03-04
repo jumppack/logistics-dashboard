@@ -1,13 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useInterval } from '../hooks/useInterval';
-import { Map, Navigation } from 'lucide-react';
+import { Map as MapIcon, Navigation } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, useMap, ZoomControl } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix typical Leaflet icon issues in React
+delete (L.Icon.Default.prototype as Partial<{ _getIconUrl: string }>)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Helper component to center the map when coordinates change
+function MapUpdater({ center }: { center: { lat: number; lng: number } }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([center.lat, center.lng], map.getZoom(), { animate: true });
+  }, [center, map]);
+  return null;
+}
 
 export default function MapView() {
-  // MapView Polling Rationale:
-  // Instead of pushing this rapidly updating state (every 2s) to a global store like Zustand or Context,
-  // we keep it entirely localized to `MapView`. 
-  // This physically isolates the re-renders. The 1,000 live orders list will never know about or 
-  // be affected by the 2s timer firing here.
   const [coordinates, setCoordinates] = useState({ lat: 40.7128, lng: -74.0060 });
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [pulse, setPulse] = useState(false);
@@ -27,9 +42,9 @@ export default function MapView() {
 
   return (
     <div className="flex flex-col h-full bg-gray-50 rounded-xl overflow-hidden border border-gray-200">
-      <div className="p-4 bg-white border-b border-gray-200 flex items-center justify-between shadow-sm z-10">
+      <div className="p-4 bg-white border-b border-gray-200 flex items-center justify-between shadow-sm z-[500] shrink-0 relative">
         <div className="flex items-center gap-2">
-          <Map className="text-indigo-600" size={20} />
+          <MapIcon className="text-indigo-600" size={20} />
           <h2 className="text-lg font-bold text-gray-800">Driver Simulation Tracker</h2>
         </div>
         <div className={`transition-opacity duration-300 flex items-center gap-2 ${pulse ? 'opacity-100' : 'opacity-0'}`}>
@@ -41,37 +56,48 @@ export default function MapView() {
         </div>
       </div>
       
-      <div className="flex-1 p-6 flex items-center justify-center relative overflow-hidden bg-white">
-        {/* Placeholder Map Grid Background */}
-        <div className="absolute inset-0 opacity-[0.03]" 
-             style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+      <div className="flex-1 relative w-full h-full bg-[#aad3df]">
+        {/* The true map taking the whole space, z-index 0 to stay behind overlays */}
+        <MapContainer 
+          center={[coordinates.lat, coordinates.lng]} 
+          zoom={14} 
+          scrollWheelZoom={true}
+          zoomControl={false}
+          className="absolute inset-0 w-full h-full z-0"
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <Marker position={[coordinates.lat, coordinates.lng]} />
+          <MapUpdater center={coordinates} />
+          <ZoomControl position="bottomleft" />
+        </MapContainer>
+
+        {/* Small floating HUD overlay positioned strategically in the bottom corner */}
+        <div className="absolute bottom-6 right-6 z-[400] w-64 bg-white/95 backdrop-blur-md rounded-2xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.2)] border border-indigo-100 p-4 flex flex-col gap-4 pointer-events-auto">
+          <div className="flex items-center gap-3">
+            <div className={`h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center border-2 border-white shadow-sm shrink-0 transition-transform duration-500 ${pulse ? 'scale-110' : 'scale-100'}`}>
+              <Navigation className="text-indigo-500" size={18} />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Driver Position</p>
+              <p className="text-[10px] text-slate-400 font-medium">Last ping: {lastUpdated.toLocaleTimeString()}</p>
+            </div>
+          </div>
+          
+          <div className="w-full space-y-2">
+            <div className="flex justify-between items-center px-3 py-2 bg-slate-50/80 rounded-lg">
+              <span className="text-xs font-medium text-slate-500">Lat</span>
+              <span className="font-mono text-sm font-semibold text-slate-800">{coordinates.lat.toFixed(5)}</span>
+            </div>
+            <div className="flex justify-between items-center px-3 py-2 bg-slate-50/80 rounded-lg">
+              <span className="text-xs font-medium text-slate-500">Lng</span>
+              <span className="font-mono text-sm font-semibold text-slate-800">{coordinates.lng.toFixed(5)}</span>
+            </div>
+          </div>
         </div>
 
-        <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-xl border border-indigo-50 p-8 flex flex-col items-center gap-8">
-          <div className="h-24 w-24 rounded-full bg-indigo-50 flex items-center justify-center border-4 border-white shadow-[0_0_15px_rgba(79,70,229,0.1)] relative">
-            <Navigation 
-               className={`text-indigo-500 transition-transform duration-1000 ${pulse ? 'scale-110' : 'scale-100'}`} 
-               size={40} 
-            />
-          </div>
-          
-          <div className="w-full space-y-4">
-            <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
-              <span className="text-sm font-medium text-slate-500">Latitude</span>
-              <span className="font-mono text-lg font-semibold text-slate-800">{coordinates.lat.toFixed(5)}</span>
-            </div>
-            
-            <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
-              <span className="text-sm font-medium text-slate-500">Longitude</span>
-              <span className="font-mono text-lg font-semibold text-slate-800">{coordinates.lng.toFixed(5)}</span>
-            </div>
-          </div>
-          
-          <div className="text-xs text-slate-400 flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-full">
-            <span>Last polled:</span>
-            <span className="font-medium text-slate-600">{lastUpdated.toLocaleTimeString()}</span>
-          </div>
-        </div>
       </div>
     </div>
   );

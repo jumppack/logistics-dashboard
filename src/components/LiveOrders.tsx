@@ -51,12 +51,13 @@ export default function LiveOrders() {
         </span>
       </div>
       
-      <div className="flex-1 w-full bg-gray-50/50">
+      <div className="flex-1 w-full bg-gray-50/50 relative">
         {/* Virtualized List rationale:
             Renders only the DOM nodes currently visible (+ overscan). 
             Even with 1000+ items, the browser only manages ~10-15 nodes, keeping FPS high. */}
         <WindowList
-          height={600}      
+          style={{ position: 'absolute', inset: 0 }}
+          height="100%"      
           rowCount={orderIds.length}
           rowHeight={96}     
           width="100%"
