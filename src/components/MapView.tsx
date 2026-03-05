@@ -71,11 +71,11 @@ export default function MapView() {
           />
           <Marker position={[coordinates.lat, coordinates.lng]} />
           <MapUpdater center={coordinates} />
-          <ZoomControl position="bottomleft" />
+          <ZoomControl position="bottomleft" />ds
         </MapContainer>
 
         {/* Small floating HUD overlay positioned strategically in the bottom corner */}
-        <div className="absolute bottom-6 right-6 z-[400] w-64 bg-white/95 backdrop-blur-md rounded-2xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.2)] border border-indigo-100 p-4 flex flex-col gap-4 pointer-events-auto">
+        <div className="absolute bottom-6 right-6 z-[400] w-64 bg-white/95= backdrop-blur-md rounded-2xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.2)] border border-indigo-100 p-4 flex flex-col gap-4 pointer-events-auto">
           <div className="flex items-center gap-3">
             <div className={`h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center border-2 border-white shadow-sm shrink-0 transition-transform duration-500 ${pulse ? 'scale-110' : 'scale-100'}`}>
               <Navigation className="text-indigo-500" size={18} />
